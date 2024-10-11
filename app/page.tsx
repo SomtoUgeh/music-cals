@@ -1,18 +1,45 @@
 import { MusicAppComponent } from "@/components/music-app";
-import { parseDate } from "@/lib/utils";
+
+interface SpotifyArtist {
+  href: string;
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface SpotifyImage {
+  height: number;
+  url: string;
+  width: number;
+}
+
+export interface SpotifyAlbumItems {
+  album_type: "album" | "ep" | "single";
+  artists: SpotifyArtist[];
+  href: string;
+  id: string;
+  images: SpotifyImage[];
+  name: string;
+  release_date: string;
+  release_date_precision: "year" | "month" | "day";
+  total_tracks: number;
+  type: "album";
+}
+
+interface SpotifyAlbums {
+  albums: {
+    items: SpotifyAlbumItems[];
+  };
+}
 
 async function getAccessToken() {
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization:
-        "Basic " +
-        Buffer.from(
-          process.env.SPOTIFY_CLIENT_ID +
-            ":" +
-            process.env.SPOTIFY_CLIENT_SECRET
-        ).toString("base64"),
+      Authorization: `Basic ${Buffer.from(
+        `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+      ).toString("base64")}`,
     },
     body: "grant_type=client_credentials",
     cache: "no-store",
@@ -22,12 +49,11 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-async function getAlbumsByDate(date: Date) {
+async function getAlbums() {
   const accessToken = await getAccessToken();
-  const formattedDate = date.toISOString().split("T")[0];
 
   const response = await fetch(
-    `https://api.spotify.com/v1/browse/new-releases?limit=20&offset=0`,
+    "https://api.spotify.com/v1/browse/new-releases?limit=50&offset=0",
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -36,20 +62,13 @@ async function getAlbumsByDate(date: Date) {
     }
   );
 
-  const data = await response.json();
-  // Filter albums by release date
-  return data.albums.items.filter(
-    (album) => album.release_date === formattedDate
-  );
+  const data = (await response.json()) as SpotifyAlbums;
+
+  return data.albums.items;
 }
 
-export default async function Albums({
-  searchParams,
-}: {
-  searchParams: { date?: string };
-}) {
-  const date = searchParams.date ? parseDate(searchParams.date) : new Date();
-  const albums = await getAlbumsByDate(date);
+export default async function Albums() {
+  const albums = await getAlbums();
 
-  return <MusicAppComponent initialDate={date} albums={albums} />;
+  return <MusicAppComponent albums={albums} />;
 }
