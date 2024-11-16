@@ -1,4 +1,5 @@
 import { MusicAppComponent } from "@/components/music-app";
+import { headers } from "next/headers";
 
 interface SpotifyArtist {
   href: string;
@@ -29,6 +30,23 @@ export interface SpotifyAlbumItems {
 interface SpotifyAlbums {
   albums: {
     items: SpotifyAlbumItems[];
+  };
+}
+
+interface AppleTrack {
+  id: string;
+  type: string;
+  href: string;
+  attributes: {
+    name: string;
+    artistName: string;
+    artwork: {
+      url: string;
+      height: number;
+      width: number;
+    };
+    url: string;
+    previews: Array<{ url: string }>;
   };
 }
 
@@ -63,12 +81,68 @@ async function getAlbums() {
   );
 
   const data = (await response.json()) as SpotifyAlbums;
-
   return data.albums.items;
 }
 
+async function getAppleCharts() {
+  try {
+    // Get country code from request headers
+    const headersList = headers();
+    const countryCode =
+      headersList.get("x-vercel-ip-country")?.toLowerCase() || "us";
+
+    const response = await fetch(
+      `https://api.music.apple.com/v1/catalog/${countryCode}/charts?types=songs&limit=25`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.APPLE_MUSIC_TOKEN}`,
+        },
+        next: { revalidate: 3600 }, // Revalidate every hour
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch Apple Music charts");
+    }
+
+    const data = await response.json();
+
+    // Extract the top songs from the response
+    const tracks = data.results.songs[0].data.map((track: AppleTrack) => ({
+      title: track.attributes.name,
+      subtitle: track.attributes.artistName,
+      shareLink: track.attributes.url,
+      images: {
+        background: track.attributes.artwork.url
+          .replace("{w}", "800")
+          .replace("{h}", "800"),
+        coverart: track.attributes.artwork.url
+          .replace("{w}", "300")
+          .replace("{h}", "300"),
+      },
+      preview: track.attributes.previews[0]?.url,
+    }));
+
+    return {
+      tracks,
+      countryCode: countryCode.toUpperCase(),
+    };
+  } catch (error) {
+    console.error("Error fetching Apple Music charts:", error);
+    return {
+      tracks: [],
+      countryCode: "US",
+    };
+  }
+}
+
 export default async function Albums() {
-  const albums = await getAlbums();
+  const [albums, appleCharts] = await Promise.all([
+    getAlbums(),
+    getAppleCharts(),
+  ]);
+
+  console.log({ appleCharts });
 
   return <MusicAppComponent albums={albums} />;
 }

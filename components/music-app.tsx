@@ -19,11 +19,24 @@ import { filterAlbumsByDate, formatDateForURL, parseDate } from "@/lib/utils";
 import type { SpotifyAlbumItems } from "@/app/page";
 import Image from "next/image";
 
-interface MusicAppComponentProps {
-  albums: SpotifyAlbumItems[];
+interface ShazamTrack {
+  title: string;
+  subtitle: string;
+  shareLink: string;
+  images: unknown;
 }
 
-export function MusicAppComponent({ albums }: MusicAppComponentProps) {
+interface MusicAppProps {
+  albums: SpotifyAlbumItems[];
+  shazamTracks?: ShazamTrack[];
+  countryCode?: string;
+}
+
+export function MusicAppComponent({
+  albums,
+  shazamTracks = [],
+  countryCode = 'DE'
+}: MusicAppProps) {
   const searchParams = useSearchParams();
   const paramsDate = searchParams.get("date") ?? "";
   const updatedDate = parseDate(paramsDate);
@@ -255,6 +268,33 @@ export function MusicAppComponent({ albums }: MusicAppComponentProps) {
           )}
         </div>
       </div>
+
+      {shazamTracks && shazamTracks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">
+            Top Tracks in {countryCode} 🎵
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {shazamTracks.map((track, index) => (
+              <div
+                key={`${track.title}-${index}`}
+                className="p-4 border rounded-lg shadow hover:shadow-lg transition-shadow"
+              >
+                <h3 className="font-semibold">{track.title}</h3>
+                <p className="text-gray-600">{track.subtitle}</p>
+                <a
+                  href={track.shareLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  Listen on Shazam
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

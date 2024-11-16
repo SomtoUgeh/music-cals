@@ -3,15 +3,19 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
-// import { addMonths, subMonths } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+export type CalendarProps = Omit<
+  React.ComponentProps<typeof DayPicker>,
+  "mode" | "onSelect"
+> & {
   disableFutureDates?: boolean;
+  selected?: Date | undefined;
   onSelect?: (date: Date | undefined) => void;
   onMonthChange?: (month: Date) => void;
+  mode?: "single";
 };
 
 function Calendar({
@@ -19,16 +23,9 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   disableFutureDates = false,
-  // onSelect,
-  // onMonthChange,
+  mode = "single",
   ...props
 }: CalendarProps) {
-  // const today = new Date();
-  // const [month, setMonth] = React.useState(today);
-  // const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    // today
-  // );
-
   const disabledDays = React.useMemo(() => {
     if (disableFutureDates) {
       return { after: new Date() };
@@ -36,19 +33,11 @@ function Calendar({
     return undefined;
   }, [disableFutureDates]);
 
-  // const handleMonthChange = (newMonth: Date) => {
-  //   setMonth(newMonth);
-  //   onMonthChange?.(newMonth);
-  // };
-
-  // const handleDateSelect = (date: Date | undefined) => {
-  //   setSelectedDate(date);
-  //   onDateChange?.(date);
-  // };
-
   return (
     <DayPicker
-      mode="single"
+      mode={mode}
+      selected={props.selected}
+      onSelect={props.onSelect}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
@@ -97,10 +86,6 @@ function Calendar({
           <ChevronRight className="h-4 w-4" {...props} />
         ),
       }}
-      // month={month}
-      // selected={selectedDate}
-      // onSelect={onSelect}
-      // onMonthChange={onMonthChange}
       disabled={disabledDays}
       toMonth={new Date()}
       {...props}
