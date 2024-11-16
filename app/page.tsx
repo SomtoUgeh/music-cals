@@ -55,20 +55,16 @@ async function getAlbums() {
   const response = await fetch(
     "https://api.spotify.com/v1/browse/new-releases?limit=50&offset=0",
     {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
       next: { revalidate: 3600 }, // Revalidate every hour
     }
   );
 
   const data = (await response.json()) as SpotifyAlbums;
-  console.log({ data });
   return data.albums.items;
 }
 
 export default async function Albums() {
   const albums = await getAlbums();
-  console.log({ albums });
   return <MusicAppComponent albums={albums} />;
 }
