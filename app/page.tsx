@@ -63,10 +63,12 @@ async function getAlbums() {
   );
 
   const data = (await response.json()) as SpotifyAlbums;
+  console.log({ data });
   return data.albums.items;
 }
 
 export default async function Albums() {
   const albums = await getAlbums();
+  console.log({ albums });
   return <MusicAppComponent albums={albums} />;
 }
