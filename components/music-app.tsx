@@ -29,7 +29,7 @@ export function MusicAppComponent({ albums }: MusicAppProps) {
   const updatedDate = parseDate(paramsDate);
   const filteredAlbumsByDate = filterAlbumsByDate(albums, updatedDate);
 
-  console.log({ filteredAlbumsByDate });
+  console.log({ filteredAlbumsByDate, albums });
 
   const [date, setDate] = useQueryState("date", {
     parse: (value: string) => new Date(value),
